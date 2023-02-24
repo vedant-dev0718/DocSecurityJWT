@@ -18,6 +18,11 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String[] AUTH_WHITE_LIST = {
+            "/api/v1/auth/**",
+            "/h2-console/**",
+            "/**"
+    };
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
@@ -25,21 +30,31 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+                .cors()
+                .and()
                 .csrf()
                 .disable()
-                .authorizeHttpRequests()
-                .requestMatchers("/api/v1/auth/**")
-                .permitAll()
-                .anyRequest()
-                .authenticated()
+                .exceptionHandling()
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
-
+                .authorizeHttpRequests()
+                .requestMatchers(AUTH_WHITE_LIST)
+                .permitAll()
+                .and()
+                .headers()
+                .frameOptions()
+                .disable()
+                .and()
+                .authorizeHttpRequests()
+                .anyRequest()
+                .authenticated()
+                .and()
+                .httpBasic()
+                .and()
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .httpBasic();
 
         return http.build();
     }
